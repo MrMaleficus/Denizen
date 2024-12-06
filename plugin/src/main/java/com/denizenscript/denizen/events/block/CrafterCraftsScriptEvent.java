@@ -32,7 +32,7 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
     // <context.recipe_id> returns the ElementTag of the recipe ID formed.
     //
     // @Determine
-    // ItemTag to set the item being crafted.
+    // "ITEM:<ItemTag>" to set the item being crafted. Determinations still consume ingredients
     //
     // -->
 
@@ -56,14 +56,6 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
             return false;
         }
         return super.matches(path);
-    }
-
-    @Override
-    public void cancellationChanged() {
-        if (cancelled) {
-            event.setResult(new ItemStack(Material.AIR));
-        }
-        super.cancellationChanged();
     }
 
     @Override
