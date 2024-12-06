@@ -6,9 +6,11 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import org.bukkit.Keyed;
+import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.CrafterCraftEvent;
+import org.bukkit.inventory.ItemStack;
 
 public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -58,6 +60,9 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
 
     @Override
     public void cancellationChanged() {
+        if (cancelled) {
+            event.setResult(new ItemStack(Material.AIR));
+        }
         super.cancellationChanged();
     }
 
