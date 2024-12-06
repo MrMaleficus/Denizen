@@ -99,7 +99,7 @@ public class ScriptEventRegistry {
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_21)) {
             ScriptEvent.registerScriptEvent(CrafterCraftsScriptEvent.class);
         }
-        
+
         // Entity events
         ScriptEvent.registerScriptEvent(AreaEffectCloudApplyScriptEvent.class);
         if (!Denizen.supportsPaper) {
