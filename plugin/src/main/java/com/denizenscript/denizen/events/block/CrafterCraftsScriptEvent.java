@@ -32,7 +32,7 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
     // <context.recipe_id> returns the ElementTag of the recipe ID formed.
     //
     // @Determine
-    // "ITEM:<ItemTag>" to set the item being crafted. Determinations still consume ingredients
+    // "ITEM:<ItemTag>" to set the item being crafted. Determinations still consume ingredients.
     //
     // -->
 
