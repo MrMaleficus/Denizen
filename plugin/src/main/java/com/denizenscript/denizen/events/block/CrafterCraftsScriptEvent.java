@@ -36,6 +36,9 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
 
     public CrafterCraftsScriptEvent() {
         registerCouldMatcher("crafter crafts <item>");
+        this.<CrafterCraftsScriptEvent, ItemTag>registerDetermination("item", ItemTag.class, (evt, context, result) -> {
+            event.setResult(result.getItemStack());
+        });
     }
 
     public LocationTag location;
@@ -54,24 +57,10 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
     }
 
     @Override
-    public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
-        if (determinationObj.canBeType(ItemTag.class)) {
-            ItemTag it = determinationObj.asType(ItemTag.class, getTagContext(path));
-            if (it != null) {
-                result = it;
-                event.setResult(result.getItemStack());
-                return true;
-            }
-        }
-        return super.applyDetermination(path, determinationObj);
-    }
-    @Override
     public void cancellationChanged() {
-        if (cancelled) {
-            event.setCancelled(true);
-        }
         super.cancellationChanged();
     }
+
     @Override
     public ObjectTag getContext(String name) {
         switch (name) {
@@ -81,6 +70,7 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
         }
         return super.getContext(name);
     }
+
     @EventHandler
     public void onCrafterCrafts(CrafterCraftEvent event) {
         location = new LocationTag(event.getBlock().getLocation());
