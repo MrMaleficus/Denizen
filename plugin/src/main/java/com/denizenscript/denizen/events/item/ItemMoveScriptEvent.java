@@ -35,10 +35,8 @@ public class ItemMoveScriptEvent extends BukkitScriptEvent implements Listener {
 
     public ItemMoveScriptEvent() {
         registerCouldMatcher("<item> moves from <inventory> (to <inventory>)");
-        this.<ItemMoveScriptEvent, ItemTag>registerDetermination(null, ItemTag.class, (evt, context, item) -> {
-            event.setItem(item.getItemStack());
-        });
     }
+
 
     public InventoryTag origin;
     public InventoryTag destination;
@@ -60,6 +58,16 @@ public class ItemMoveScriptEvent extends BukkitScriptEvent implements Listener {
             return false;
         }
         return super.matches(path);
+    }
+
+    @Override
+    public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
+        if (determinationObj.canBeType(ItemTag.class)) {
+            item = determinationObj.asType(ItemTag.class, getTagContext(path));
+            event.setItem(item.getItemStack());
+            return true;
+        }
+        return super.applyDetermination(path, determinationObj);
     }
 
     @Override
