@@ -3,6 +3,7 @@ package com.denizenscript.denizen.events.block;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
 import org.bukkit.Keyed;
@@ -52,7 +53,7 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
         if (!runInCheck(path, location)) {
             return false;
         }
-        if  (!path.tryArgObject(2, result)) {
+        if (!path.tryArgObject(2, result)) {
             return false;
         }
         return super.matches(path);
@@ -60,12 +61,12 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
 
     @Override
     public ObjectTag getContext(String name) {
-        switch (name) {
-            case "item": return result;
-            case "location": return location;
-            case "recipe_id": return new ElementTag(((Keyed) event.getRecipe()).getKey().toString());
-        }
-        return super.getContext(name);
+        return switch (name) {
+            case "item" -> new ItemTag(event.getResult());
+            case "location" -> new LocationTag(event.getBlock().getLocation());
+            case "recipe_id" -> new ElementTag(Utilities.namespacedKeyToString(event.getRecipe().getKey()));
+            default -> super.getContext(name);
+        };
     }
 
     @EventHandler
