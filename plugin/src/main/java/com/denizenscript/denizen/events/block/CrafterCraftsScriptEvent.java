@@ -33,13 +33,13 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
     // <context.recipe_id> returns the ElementTag of the recipe ID formed.
     //
     // @Determine
-    // "ITEM:<ItemTag>" to set the item being crafted. Determinations still consume ingredients.
+    // ItemTag to set the item being crafted. Determinations still consume ingredients.
     //
     // -->
 
     public CrafterCraftsScriptEvent() {
         registerCouldMatcher("crafter crafts <item>");
-        this.<CrafterCraftsScriptEvent, ItemTag>registerDetermination("item", ItemTag.class, (evt, context, result) -> {
+        this.<CrafterCraftsScriptEvent, ItemTag>registerDetermination(null, ItemTag.class, (evt, context, result) -> {
             event.setResult(result.getItemStack());
         });
     }
@@ -64,7 +64,7 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
         return switch (name) {
             case "item" -> new ItemTag(event.getResult());
             case "location" -> new LocationTag(event.getBlock().getLocation());
-            case "recipe_id" -> new ElementTag(Utilities.namespacedKeyToString(event.getRecipe().getKey()));
+            case "recipe_id" -> new ElementTag(Utilities.namespacedKeyToString(event.getRecipe().getKey()), true);
             default -> super.getContext(name);
         };
     }
