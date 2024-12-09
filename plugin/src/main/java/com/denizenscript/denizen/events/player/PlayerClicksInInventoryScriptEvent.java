@@ -37,7 +37,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     // One item is dropped from the cursor.
     // DROP_ONE_SLOT
     // One item is dropped from the clicked slot.
-    // HOTBAR_MOVE_AND_READD
+    // HOTBAR_MOVE_AND_READ
     // The clicked item is moved to the hotbar, and the item currently there is re-added to the
     //      player's inventory.
     // HOTBAR_SWAP
@@ -107,8 +107,10 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     public PlayerClicksInInventoryScriptEvent() {
         registerCouldMatcher("player (<'click_type'>) clicks (<item>) in <inventory>");
         registerSwitches("with", "in_area", "action", "slot");
+        this.<PlayerClicksInInventoryScriptEvent, ItemTag>registerDetermination(null, ItemTag.class, (evt, context, current) -> {
+            event.setCurrentItem(current.getItemStack());
+        });
     }
-
 
     public InventoryTag inventory;
     public ItemTag item;
@@ -180,55 +182,32 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     }
 
     @Override
-    public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
-        if (determinationObj.canBeType(ItemTag.class)) {
-            event.setCurrentItem(determinationObj.asType(ItemTag.class, getTagContext(path)).getItemStack());
-            return true;
-        }
-        return super.applyDetermination(path, determinationObj);
-    }
-
-    @Override
     public ScriptEntryData getScriptEntryData() {
         return new BukkitScriptEntryData(event.getWhoClicked());
     }
 
     @Override
     public ObjectTag getContext(String name) {
-        if (name.equals("inventory")) {
-            return inventory;
-        }
-        else if (name.equals("item")) {
-            return item;
-        }
-        else if (name.equals("cursor_item")) {
-            return cursor;
-        }
-        else if (name.equals("click")) {
-            return new ElementTag(event.getClick());
-        }
-        else if (name.equals("action")) {
-            return new ElementTag(event.getAction());
-        }
-        else if (name.equals("slot_type")) {
-            return new ElementTag(event.getSlotType());
-        }
-        else if (name.equals("is_shift_click")) {
-            return new ElementTag(event.isShiftClick());
-        }
-        else if (name.equals("clicked_inventory") && event.getClickedInventory() != null) {
-            return InventoryTag.mirrorBukkitInventory(event.getClickedInventory());
-        }
-        else if (name.equals("slot")) {
-            return new ElementTag(event.getSlot() + 1);
-        }
-        else if (name.equals("raw_slot")) {
-            return new ElementTag(event.getRawSlot() + 1);
-        }
-        else if (name.equals("hotbar_button")) {
-            return new ElementTag(event.getHotbarButton() + 1);
-        }
-        return super.getContext(name);
+        return switch (name) {
+            case "inventory" -> inventory;
+            case "item" -> item;
+            case "cursor_item" -> cursor;
+            case "click" -> new ElementTag(event.getClick());
+            case "action" -> new ElementTag(event.getAction());
+            case "slot_type" -> new ElementTag(event.getSlotType());
+            case "is_shift_click" -> new ElementTag(event.isShiftClick());
+            case "slot" -> new ElementTag(event.getSlot() + 1);
+            case "raw_slot" -> new ElementTag(event.getRawSlot() + 1);
+            case "hotbar_button" -> new ElementTag(event.getHotbarButton() + 1);
+            case "clicked_inventory" -> {
+                if (event.getClickedInventory() != null) {
+                    yield InventoryTag.mirrorBukkitInventory(event.getClickedInventory());
+                } else {
+                    yield null;
+                }
+            }
+            default -> super.getContext(name);
+        };
     }
 
     @EventHandler
