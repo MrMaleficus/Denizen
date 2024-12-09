@@ -6,12 +6,9 @@ import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
-import org.bukkit.Keyed;
-import org.bukkit.Material;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.CrafterCraftEvent;
-import org.bukkit.inventory.ItemStack;
 
 public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Listener {
 
@@ -33,13 +30,13 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
     // <context.recipe_id> returns the ElementTag of the recipe ID formed.
     //
     // @Determine
-    // ItemTag to set the item being crafted. Determinations still consume ingredients.
+    // "ITEM:<ItemTag>" to set the item being crafted. Determinations still consume ingredients.
     //
     // -->
 
     public CrafterCraftsScriptEvent() {
         registerCouldMatcher("crafter crafts <item>");
-        this.<CrafterCraftsScriptEvent, ItemTag>registerDetermination(null, ItemTag.class, (evt, context, result) -> {
+        this.<CrafterCraftsScriptEvent, ItemTag>registerDetermination("item", ItemTag.class, (evt, context, result) -> {
             event.setResult(result.getItemStack());
         });
     }
@@ -63,7 +60,7 @@ public class CrafterCraftsScriptEvent extends BukkitScriptEvent implements Liste
     public ObjectTag getContext(String name) {
         return switch (name) {
             case "item" -> new ItemTag(event.getResult());
-            case "location" -> new LocationTag(event.getBlock().getLocation());
+            case "location" -> location;
             case "recipe_id" -> new ElementTag(Utilities.namespacedKeyToString(event.getRecipe().getKey()), true);
             default -> super.getContext(name);
         };
