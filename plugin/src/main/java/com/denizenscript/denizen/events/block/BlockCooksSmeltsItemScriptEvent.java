@@ -67,7 +67,7 @@ public class BlockCooksSmeltsItemScriptEvent extends BukkitScriptEvent implement
     public ObjectTag getContext(String name) {
         return switch (name) {
             case "location" -> location;
-            case "source_item" -> new ItemTag(event.getSource());
+            case "source_item" -> source_item;
             case "result_item" -> new ItemTag(event.getResult());
             default -> super.getContext(name);
         };

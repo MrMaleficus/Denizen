@@ -37,7 +37,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
     // One item is dropped from the cursor.
     // DROP_ONE_SLOT
     // One item is dropped from the clicked slot.
-    // HOTBAR_MOVE_AND_READ
+    // HOTBAR_MOVE_AND_READD
     // The clicked item is moved to the hotbar, and the item currently there is re-added to the
     //      player's inventory.
     // HOTBAR_SWAP
@@ -199,13 +199,7 @@ public class PlayerClicksInInventoryScriptEvent extends BukkitScriptEvent implem
             case "slot" -> new ElementTag(event.getSlot() + 1);
             case "raw_slot" -> new ElementTag(event.getRawSlot() + 1);
             case "hotbar_button" -> new ElementTag(event.getHotbarButton() + 1);
-            case "clicked_inventory" -> {
-                if (event.getClickedInventory() != null) {
-                    yield InventoryTag.mirrorBukkitInventory(event.getClickedInventory());
-                } else {
-                    yield null;
-                }
-            }
+            case "clicked_inventory" -> event.getClickedInventory() != null ? InventoryTag.mirrorBukkitInventory(event.getClickedInventory()) : null;
             default -> super.getContext(name);
         };
     }
