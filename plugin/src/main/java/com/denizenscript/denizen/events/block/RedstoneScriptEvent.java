@@ -35,7 +35,9 @@ public class RedstoneScriptEvent extends BukkitScriptEvent implements Listener {
     public RedstoneScriptEvent() {
         registerCouldMatcher("redstone recalculated");
         this.<RedstoneScriptEvent, ElementTag>registerDetermination(null, ElementTag.class, (evt, context, current) -> {
-            evt.event.setNewCurrent(current.asInt());
+            if (current.asElement().isInt()) {
+                evt.event.setNewCurrent(current.asInt());
+            }
         });
     }
 
