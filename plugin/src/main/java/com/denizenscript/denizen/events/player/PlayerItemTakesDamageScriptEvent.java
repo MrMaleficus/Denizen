@@ -47,6 +47,9 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
 
     public PlayerItemTakesDamageScriptEvent() {
         registerCouldMatcher("player <item> takes damage");
+        this.<PlayerItemTakesDamageScriptEvent, ElementTag>registerDetermination(null, ElementTag.class, (evt, context, amount) -> {
+            evt.event.setDamage(amount.asInt());
+        });
     }
 
     public PlayerItemDamageEvent event;
@@ -66,21 +69,12 @@ public class PlayerItemTakesDamageScriptEvent extends BukkitScriptEvent implemen
 
     @Override
     public ObjectTag getContext(String name) {
-        switch (name) {
-            case "item": return item;
-            case "damage": return new ElementTag(event.getDamage());
-            case "slot": return new ElementTag(SlotHelper.slotForItem(event.getPlayer().getInventory(), item.getItemStack()) + 1);
-        }
-        return super.getContext(name);
-    }
-
-    @Override
-    public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
-        if (determinationObj instanceof ElementTag element && element.isInt()) {
-            event.setDamage(element.asInt());
-            return true;
-        }
-        return super.applyDetermination(path, determinationObj);
+        return switch (name) {
+            case "item" -> item;
+            case "damage" -> new ElementTag(event.getDamage());
+            case "slot" -> new ElementTag(SlotHelper.slotForItem(event.getPlayer().getInventory(), item.getItemStack()) + 1);
+            default -> super.getContext(name);
+        };
     }
 
     @Override
