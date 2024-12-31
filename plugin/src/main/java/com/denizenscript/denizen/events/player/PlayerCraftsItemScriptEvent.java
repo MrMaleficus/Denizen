@@ -50,6 +50,9 @@ public class PlayerCraftsItemScriptEvent extends BukkitScriptEvent implements Li
     // -->
 
     public PlayerCraftsItemScriptEvent() {
+        this.<PlayerCraftsItemScriptEvent, ItemTag>registerDetermination(null, ItemTag.class, (evt, context, result_item) -> {
+            event.setCurrentItem(result_item.getItemStack());
+        });
     }
 
     public CraftItemEvent event;
@@ -58,13 +61,10 @@ public class PlayerCraftsItemScriptEvent extends BukkitScriptEvent implements Li
 
     @Override
     public boolean couldMatch(ScriptPath path) {
-        if (!path.eventArgsLowEqualStartingAt(0, "player", "crafts")) {
+        if (!path.eventLower.startsWith("player crafts ")) {
             return false;
         }
-        if (!couldMatchItem(path.eventArgLowerAt(2))) {
-            return false;
-        }
-        return true;
+        return couldMatchItem(path.eventArgLowerAt(2));
     }
 
     @Override
@@ -73,17 +73,6 @@ public class PlayerCraftsItemScriptEvent extends BukkitScriptEvent implements Li
             return false;
         }
         return super.matches(path);
-    }
-
-    @Override
-    public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
-        String determination = determinationObj.toString();
-        if (ItemTag.matches(determination)) {
-            event.setCurrentItem(ItemTag.valueOf(determination, path.container).getItemStack());
-            return true;
-        }
-
-        return super.applyDetermination(path, determinationObj);
     }
 
     @Override
