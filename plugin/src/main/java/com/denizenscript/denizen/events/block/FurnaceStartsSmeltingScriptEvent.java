@@ -3,6 +3,7 @@ package com.denizenscript.denizen.events.block;
 import com.denizenscript.denizen.events.BukkitScriptEvent;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.objects.LocationTag;
+import com.denizenscript.denizen.utilities.Utilities;
 import com.denizenscript.denizencore.objects.ObjectTag;
 import com.denizenscript.denizencore.objects.core.DurationTag;
 import com.denizenscript.denizencore.objects.core.ElementTag;
@@ -44,6 +45,9 @@ public class FurnaceStartsSmeltingScriptEvent extends BukkitScriptEvent implemen
 
     public FurnaceStartsSmeltingScriptEvent() {
         registerCouldMatcher("furnace starts smelting <item>");
+        this.<FurnaceStartsSmeltingScriptEvent, DurationTag>registerDetermination(null, DurationTag.class, (evt, context, time) -> {
+                evt.event.setTotalCookTime(time.getTicksAsInt());
+        });
     }
 
     public ItemTag item;
@@ -62,23 +66,14 @@ public class FurnaceStartsSmeltingScriptEvent extends BukkitScriptEvent implemen
     }
 
     @Override
-    public boolean applyDetermination(ScriptPath path, ObjectTag determinationObj) {
-        if (determinationObj.canBeType(DurationTag.class)) {
-            event.setTotalCookTime(determinationObj.asType(DurationTag.class, getTagContext(path)).getTicksAsInt());
-            return true;
-        }
-        return super.applyDetermination(path, determinationObj);
-    }
-
-    @Override
     public ObjectTag getContext(String name) {
-        switch (name) {
-            case "location": return location;
-            case "item": return item;
-            case "recipe_id": return new ElementTag(event.getRecipe().getKey().toString());
-            case "total_cook_time": return new DurationTag((long) event.getTotalCookTime());
-        }
-        return super.getContext(name);
+        return switch (name) {
+            case "location" -> location;
+            case "item" -> item;
+            case "recipe_id" -> new ElementTag(Utilities.namespacedKeyToString(event.getRecipe().getKey()), true);
+            case "total_cook_time" -> new DurationTag((long) event.getTotalCookTime());
+            default -> super.getContext(name);
+        };
     }
 
     @EventHandler
