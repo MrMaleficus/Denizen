@@ -46,7 +46,9 @@ public class FurnaceStartsSmeltingScriptEvent extends BukkitScriptEvent implemen
     public FurnaceStartsSmeltingScriptEvent() {
         registerCouldMatcher("furnace starts smelting <item>");
         this.<FurnaceStartsSmeltingScriptEvent, DurationTag>registerDetermination(null, DurationTag.class, (evt, context, time) -> {
+            if (time.asElement().isInt()) {
                 evt.event.setTotalCookTime(time.getTicksAsInt());
+            }
         });
     }
 
@@ -70,7 +72,7 @@ public class FurnaceStartsSmeltingScriptEvent extends BukkitScriptEvent implemen
         return switch (name) {
             case "location" -> location;
             case "item" -> item;
-            case "recipe_id" -> new ElementTag(Utilities.namespacedKeyToString(event.getRecipe().getKey()), true);
+            case "recipe_id" -> new ElementTag(event.getRecipe().getKey().toString());
             case "total_cook_time" -> new DurationTag((long) event.getTotalCookTime());
             default -> super.getContext(name);
         };
