@@ -46,9 +46,7 @@ public class FurnaceStartsSmeltingScriptEvent extends BukkitScriptEvent implemen
     public FurnaceStartsSmeltingScriptEvent() {
         registerCouldMatcher("furnace starts smelting <item>");
         this.<FurnaceStartsSmeltingScriptEvent, DurationTag>registerDetermination(null, DurationTag.class, (evt, context, time) -> {
-            if (time.asElement().isInt()) {
-                evt.event.setTotalCookTime(time.getTicksAsInt());
-            }
+            evt.event.setTotalCookTime(time.getTicksAsInt());
         });
     }
 
