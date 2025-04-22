@@ -7,6 +7,7 @@ import com.denizenscript.denizen.nms.util.jnbt.Tag;
 import com.denizenscript.denizen.objects.ItemTag;
 import com.denizenscript.denizen.utilities.nbt.CustomNBT;
 import com.denizenscript.denizencore.objects.core.MapTag;
+import com.google.gson.JsonObject;
 import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -42,7 +43,17 @@ public abstract class ItemHelper {
 
     public abstract String getJsonString(ItemStack itemStack);
 
-    public abstract String getRawHoverText(ItemStack itemStack);
+    public String getLegacyHoverNbt(ItemTag item) { // TODO: once 1.20 is the minimum supported version, remove this
+        return item.getItemMeta().getAsString();
+    }
+
+    public JsonObject getRawHoverComponentsJson(ItemStack item) {
+        throw new UnsupportedOperationException();
+    }
+
+    public ItemStack applyRawHoverComponentsJson(ItemStack item, JsonObject components) {
+        throw new UnsupportedOperationException();
+    }
 
     public abstract PlayerProfile getSkullSkin(ItemStack itemStack);
 
@@ -119,10 +130,6 @@ public abstract class ItemHelper {
     public abstract void registerSmithingRecipe(String keyName, ItemStack result, ItemStack[] baseItem, boolean baseExact, ItemStack[] upgradeItem, boolean upgradeExact, ItemStack[] templateItem, boolean templateExact);
 
     public abstract void setInventoryItem(Inventory inventory, ItemStack item, int slot);
-
-    public abstract IntArrayTag convertUuidToNbt(UUID id);
-
-    public abstract UUID convertNbtToUuid(IntArrayTag id);
 
     public abstract String getDisplayName(ItemTag item);
 

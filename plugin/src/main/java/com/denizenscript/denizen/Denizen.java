@@ -617,4 +617,9 @@ public class Denizen extends JavaPlugin {
             default -> null;
         };
     }
+
+    @Override
+    public File getFile() {
+        return super.getFile();
+    }
 }

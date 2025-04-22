@@ -1913,20 +1913,6 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject, Flagg
         }, "leashed");
 
         // <--[tag]
-        // @attribute <EntityTag.is_sheared>
-        // @returns ElementTag(Boolean)
-        // @group attributes
-        // @description
-        // Returns whether a sheep is sheared.
-        // -->
-        registerSpawnedOnlyTag(ElementTag.class, "is_sheared", (attribute, object) -> {
-            if (!(object.getBukkitEntity() instanceof Sheep)) {
-                return null;
-            }
-            return new ElementTag(((Sheep) object.getBukkitEntity()).isSheared());
-        });
-
-        // <--[tag]
         // @attribute <EntityTag.is_on_ground>
         // @returns ElementTag(Boolean)
         // @group attributes
@@ -3764,19 +3750,6 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject, Flagg
 
         // <--[mechanism]
         // @object EntityTag
-        // @name sheared
-        // @input ElementTag(Boolean)
-        // @description
-        // Sets whether the sheep is sheared.
-        // @tags
-        // <EntityTag.is_sheared>
-        // -->
-        if (mechanism.matches("sheared") && mechanism.requireBoolean() && getBukkitEntity() instanceof Sheep) {
-            ((Sheep) getBukkitEntity()).setSheared(mechanism.getValue().asBoolean());
-        }
-
-        // <--[mechanism]
-        // @object EntityTag
         // @name collidable
         // @input ElementTag(Boolean)
         // @description
@@ -3901,12 +3874,13 @@ public class EntityTag implements ObjectTag, Adjustable, EntityFormObject, Flagg
         // Makes a player-type entity interact with a block.
         // -->
         if (mechanism.matches("interact_with") && mechanism.requireObject(LocationTag.class)) {
-            if (!isPlayer()) {
+            Player player = getPlayer();
+            if (player == null) {
                 mechanism.echoError("Only player-type entities can interact with blocks!");
                 return;
             }
             LocationTag interactLocation = mechanism.valueAsType(LocationTag.class);
-            NMSHandler.entityHelper.forceInteraction(getPlayer(), interactLocation);
+            NMSHandler.entityHelper.forceInteraction(player, interactLocation);
         }
 
         if (mechanism.matches("play_death")) {

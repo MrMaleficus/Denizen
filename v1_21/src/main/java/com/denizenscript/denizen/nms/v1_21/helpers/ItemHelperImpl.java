@@ -20,9 +20,11 @@ import com.denizenscript.denizencore.utilities.CoreUtilities;
 import com.denizenscript.denizencore.utilities.ReflectionHelper;
 import com.denizenscript.denizencore.utilities.debugging.Debug;
 import com.google.common.collect.*;
+import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import com.mojang.serialization.Dynamic;
+import com.mojang.serialization.JsonOps;
 import net.md_5.bungee.api.ChatColor;
 import net.minecraft.advancements.critereon.BlockPredicate;
 import net.minecraft.core.*;
@@ -48,12 +50,12 @@ import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.ResolvableProfile;
-import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.item.crafting.BlastingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
 import net.minecraft.world.item.crafting.SmithingTransformRecipe;
 import net.minecraft.world.item.crafting.SmokingRecipe;
+import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -70,21 +72,21 @@ import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_21_R3.CraftRegistry;
-import org.bukkit.craftbukkit.v1_21_R3.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R3.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R3.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_21_R3.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R3.inventory.*;
-import org.bukkit.craftbukkit.v1_21_R3.map.CraftMapView;
-import org.bukkit.craftbukkit.v1_21_R3.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_21_R3.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_21_R4.CraftRegistry;
+import org.bukkit.craftbukkit.v1_21_R4.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R4.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R4.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_21_R4.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R4.inventory.*;
+import org.bukkit.craftbukkit.v1_21_R4.map.CraftMapView;
+import org.bukkit.craftbukkit.v1_21_R4.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_21_R4.util.CraftNamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.*;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.SmithingTrimRecipe;
 import org.bukkit.inventory.TransmuteRecipe;
+import org.bukkit.inventory.*;
 import org.bukkit.map.MapView;
 
 import java.lang.reflect.Field;
@@ -233,9 +235,12 @@ public class ItemHelperImpl extends ItemHelper {
         Ingredient templateItemRecipe = itemArrayToRecipe(templateItem, templateExact);
         Ingredient baseItemRecipe = itemArrayToRecipe(baseItem, baseExact);
         Ingredient upgradeItemRecipe = itemArrayToRecipe(upgradeItem, upgradeExact);
-        SmithingTransformRecipe recipe = new SmithingTransformRecipe(Optional.of(templateItemRecipe), Optional.of(baseItemRecipe), Optional.of(upgradeItemRecipe), CraftItemStack.asNMSCopy(result));
+        // TODO: 1.21.5: TransmuteRecipe?
+        /*
+        SmithingTransformRecipe recipe = new SmithingTransformRecipe(Optional.of(templateItemRecipe), baseItemRecipe, Optional.of(upgradeItemRecipe), CraftItemStack.asNMSCopy(result));
         RecipeHolder<SmithingTransformRecipe> holder = new RecipeHolder<>(key, recipe);
         getRecipeManager().addRecipe(holder);
+        */
     }
 
     @Override
@@ -305,13 +310,26 @@ public class ItemHelperImpl extends ItemHelper {
     }
 
     @Override
-    public String getRawHoverText(ItemStack itemStack) {
-        // TODO: 1.20.6: this is relatively hot code, ideally should have some early returns before serializing the item
-        net.minecraft.nbt.Tag tag = CraftItemStack.asNMSCopy(itemStack).saveOptional(CraftRegistry.getMinecraftRegistry());
-        if (tag == null) {
+    public JsonObject getRawHoverComponentsJson(ItemStack item) {
+        DataComponentPatch nmsComponents = CraftItemStack.asNMSCopy(item).getComponentsPatch();
+        if (nmsComponents.isEmpty()) {
             return null;
         }
-        return tag.toString();
+        return DataComponentPatch.CODEC.encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE), nmsComponents).getOrThrow().getAsJsonObject();
+    }
+
+    @Override
+    public ItemStack applyRawHoverComponentsJson(ItemStack item, JsonObject components) {
+        return DataComponentPatch.CODEC.parse(CraftRegistry.getMinecraftRegistry().createSerializationContext(JsonOps.INSTANCE), components).mapOrElse(
+                nmsComponents -> {
+                    net.minecraft.world.item.ItemStack nmsItem = CraftItemStack.asNMSCopy(item);
+                    nmsItem.applyComponents(nmsComponents);
+                    return CraftItemStack.asCraftMirror(nmsItem);
+                },
+                error -> {
+                    Debug.echoError("Invalid hover item data '" + components + "': " + error.message());
+                    return item;
+                });
     }
 
     @Override
@@ -359,7 +377,7 @@ public class ItemHelperImpl extends ItemHelper {
     // TODO: 1.20.6: same as getNbtData, ideally needs to only set custom NBT data and have specialized methods for other usages
     @Override
     public ItemStack setNbtData(ItemStack itemStack, CompoundTag compoundTag) {
-        net.minecraft.world.item.ItemStack nmsItemStack = net.minecraft.world.item.ItemStack.parseOptional(CraftRegistry.getMinecraftRegistry(), ((CompoundTagImpl) compoundTag).toNMSTag());
+        net.minecraft.world.item.ItemStack nmsItemStack = net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), ((CompoundTagImpl) compoundTag).toNMSTag()).orElse(net.minecraft.world.item.ItemStack.EMPTY);
         return CraftItemStack.asBukkitCopy(nmsItemStack);
     }
 
@@ -448,7 +466,7 @@ public class ItemHelperImpl extends ItemHelper {
             legacyItemData.putInt("count", item.getAmount());
             legacyItemData.put("components", nmsRawComponents);
             net.minecraft.nbt.CompoundTag nmsUpdatedTag = (net.minecraft.nbt.CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(registryOps, legacyItemData), dataVersion, currentDataVersion).getValue();
-            nmsRawComponents = nmsUpdatedTag.getCompound("components");
+            nmsRawComponents = nmsUpdatedTag.getCompound("components").orElseGet(net.minecraft.nbt.CompoundTag::new);
         }
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(item);
         DataComponentPatch.CODEC.parse(registryOps, nmsRawComponents)
@@ -513,10 +531,13 @@ public class ItemHelperImpl extends ItemHelper {
             nmsItemStack.remove(nmsComponent);
             return CraftItemStack.asBukkitCopy(nmsItemStack);
         }
+        // TODO: 1.21.5: upstream code change
+        /*
         BlockPredicate nmsPredicate = new BlockPredicate(Optional.of(
                 HolderSet.direct(material -> BuiltInRegistries.BLOCK.get(CraftNamespacedKey.toMinecraft(material.getKey())).orElseThrow(), materials)
         ), Optional.empty(), Optional.empty());
         nmsItemStack.set(nmsComponent, new AdventureModePredicate(List.of(nmsPredicate), nmsAdventurePredicate == null || nmsAdventurePredicate.showInTooltip()));
+        */
         return CraftItemStack.asBukkitCopy(nmsItemStack);
     }
 
@@ -528,16 +549,6 @@ public class ItemHelperImpl extends ItemHelper {
         else {
             inventory.setItem(slot, item);
         }
-    }
-
-    @Override
-    public IntArrayTag convertUuidToNbt(UUID id) {
-        return new IntArrayTag(NbtUtils.createUUID(id).getAsIntArray());
-    }
-
-    @Override
-    public UUID convertNbtToUuid(IntArrayTag id) {
-        return NbtUtils.loadUUID(new net.minecraft.nbt.IntArrayTag(id.getValue()));
     }
 
     @Override
