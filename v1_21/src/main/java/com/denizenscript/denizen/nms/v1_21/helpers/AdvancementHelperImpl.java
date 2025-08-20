@@ -113,11 +113,35 @@ public class AdvancementHelperImpl extends AdvancementHelper {
             AdvancementProgress progress = new AdvancementProgress();
             progress.update(new AdvancementRequirements(IMPOSSIBLE_REQUIREMENTS));
             progress.grantProgress(IMPOSSIBLE_KEY); // complete impossible criteria
-            PacketHelperImpl.send(player, new ClientboundUpdateAdvancementsPacket(false, List.of(nmsAdvancement), Set.of(), Map.of(nmsAdvancement.id(), progress), false));
+            PacketHelperImpl.send(player, new ClientboundUpdateAdvancementsPacket(false, List.of(nmsAdvancement), Set.of(), Map.of(nmsAdvancement.id(), progress), true));
         }
         else {
             AdvancementHolder nmsAdvancement = getNMSAdvancementManager().advancements.get(CraftNamespacedKey.toMinecraft(advancement.key));
             ((CraftPlayer) player).getHandle().getAdvancements().award(nmsAdvancement, IMPOSSIBLE_KEY);
+        }
+    }
+
+    @Override
+    public void revokePartial(com.denizenscript.denizen.nms.util.Advancement advancement, Player player, int len) {
+        if (advancement.length <= 1) {
+            revoke(advancement, player);
+            return;
+        }
+        if (advancement.temporary) {
+            AdvancementHolder nmsAdvancement = asNMSCopy(advancement);
+            AdvancementProgress progress = new AdvancementProgress();
+            progress.update(new AdvancementRequirements(IMPOSSIBLE_REQUIREMENTS));
+            for (int i = 0; i < len; i++) {
+                progress.grantProgress(IMPOSSIBLE_KEY + i); // complete impossible criteria
+            }
+            PacketHelperImpl.send(player, new ClientboundUpdateAdvancementsPacket(false, List.of(nmsAdvancement), Set.of(), Map.of(nmsAdvancement.id(), progress), false));
+        }
+        else {
+            AdvancementHolder nmsAdvancement = getNMSAdvancementManager().advancements.get(CraftNamespacedKey.toMinecraft(advancement.key));
+            PlayerAdvancements advancements = ((CraftPlayer) player).getHandle().getAdvancements();
+            for (int i = len; i < advancement.length; i++) {
+                advancements.revoke(nmsAdvancement, IMPOSSIBLE_KEY + i);
+            }
         }
     }
 
@@ -128,7 +152,10 @@ public class AdvancementHelperImpl extends AdvancementHelper {
         }
         else {
             AdvancementHolder nmsAdvancement = getNMSAdvancementManager().advancements.get(CraftNamespacedKey.toMinecraft(advancement.key));
-            ((CraftPlayer) player).getHandle().getAdvancements().revoke(nmsAdvancement, IMPOSSIBLE_KEY);
+            PlayerAdvancements advancements = ((CraftPlayer) player).getHandle().getAdvancements();
+            for (String criterion : nmsAdvancement.value().criteria().keySet()) {
+                advancements.revoke(nmsAdvancement, criterion);
+            }
         }
     }
 
@@ -147,9 +174,15 @@ public class AdvancementHelperImpl extends AdvancementHelper {
         AdvancementHolder parent = advancement.parent != null
                 ? getNMSAdvancementManager().advancements.get(CraftNamespacedKey.toMinecraft(advancement.parent))
                 : null;
+        ClientAsset clientAsset = Optional.ofNullable(advancement.background).map(Object::toString).map(ResourceLocation::parse)
+                .filter(rl -> rl.getPath().startsWith("textures/") && rl.getPath().endsWith(".png"))
+                .map(rl -> new ClientAsset(
+                        rl.withPath(p -> p.substring("textures/".length(), p.length() - ".png".length())),
+                        rl))
+                .orElse(null); // converts the background into a ClientAsset if it's a valid png texture path under "textures/", otherwise returns null
         DisplayInfo display = new DisplayInfo(CraftItemStack.asNMSCopy(advancement.icon),
                 Handler.componentToNMS(FormattedTextHelper.parse(advancement.title, ChatColor.WHITE)), Handler.componentToNMS(FormattedTextHelper.parse(advancement.description, ChatColor.WHITE)),
-                Optional.ofNullable(advancement.background).map(CraftNamespacedKey::toMinecraft).map(ClientAsset::new), AdvancementType.valueOf(advancement.frame.name()),
+                Optional.ofNullable(clientAsset), AdvancementType.valueOf(advancement.frame.name()),
                 advancement.toast, advancement.announceToChat, advancement.hidden);
         display.setLocation(advancement.xOffset, advancement.yOffset);
         Map<String, Criterion<?>> criteria = IMPOSSIBLE_CRITERIA;
