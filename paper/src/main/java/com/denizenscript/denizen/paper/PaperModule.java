@@ -34,6 +34,7 @@ public class PaperModule {
         }
         ScriptEvent.registerScriptEvent(BlockPreDispenseScriptEvent.class);
         ScriptEvent.registerScriptEvent(CreeperIgnitesScriptEvent.class);
+        ScriptEvent.registerScriptEvent(DragonEggFormScriptEvent.class);
         ScriptEvent.registerScriptEvent(EntityAddToWorldScriptEvent.class);
         ScriptEvent.registerScriptEvent(EntityKnocksbackEntityScriptEvent.class);
         ScriptEvent.registerScriptEvent(EntityLoadCrossbowScriptEvent.class);
@@ -66,6 +67,7 @@ public class PaperModule {
         ScriptEvent.registerScriptEvent(PlayerJumpsScriptEventPaperImpl.class);
         ScriptEvent.registerScriptEvent(PlayerLecternPageChangeScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerLoomPatternSelectScriptEvent.class);
+        ScriptEvent.registerScriptEvent(PlayerNameEntityScriptEvent.class);
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_20)) {
             ScriptEvent.registerScriptEvent(PlayerOpenSignScriptEvent.class);
         }
@@ -75,6 +77,7 @@ public class PaperModule {
             ScriptEvent.registerScriptEvent(PlayerRaiseLowerItemScriptEventPaperImpl.class);
         }
         ScriptEvent.registerScriptEvent(PlayerSelectsStonecutterRecipeScriptEvent.class);
+        ScriptEvent.registerScriptEvent(PlayerSetSpawnScriptEvent.class);
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_20)) {
             ScriptEvent.registerScriptEvent(PlayerShieldDisableScriptEvent.class);
         }
@@ -107,6 +110,7 @@ public class PaperModule {
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_18)) {
             PropertyParser.registerProperty(EntityAutoExpire.class, EntityTag.class);
         }
+        PropertyParser.registerProperty(EntityBodyStingers.class, EntityTag.class);
         PropertyParser.registerProperty(EntityCarryingEgg.class, EntityTag.class);
         PropertyParser.registerProperty(EntityCanTick.class, EntityTag.class);
         PropertyParser.registerProperty(EntityDrinkingPotion.class, EntityTag.class);

@@ -3,7 +3,6 @@ package com.denizenscript.denizen.nms.v1_21.helpers;
 import com.denizenscript.denizen.nms.interfaces.ItemHelper;
 import com.denizenscript.denizen.nms.util.PlayerProfile;
 import com.denizenscript.denizen.nms.util.jnbt.CompoundTag;
-import com.denizenscript.denizen.nms.util.jnbt.IntArrayTag;
 import com.denizenscript.denizen.nms.util.jnbt.Tag;
 import com.denizenscript.denizen.nms.v1_21.Handler;
 import com.denizenscript.denizen.nms.v1_21.ReflectionMappingsInfo;
@@ -27,7 +26,10 @@ import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.JsonOps;
 import net.md_5.bungee.api.ChatColor;
 import net.minecraft.advancements.critereon.BlockPredicate;
-import net.minecraft.core.*;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.Holder;
+import net.minecraft.core.NonNullList;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
@@ -35,7 +37,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.RegistryOps;
 import net.minecraft.resources.ResourceKey;
@@ -50,12 +51,11 @@ import net.minecraft.world.item.alchemy.PotionBrewing;
 import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.ItemLore;
 import net.minecraft.world.item.component.ResolvableProfile;
+import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.item.crafting.BlastingRecipe;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.ShapelessRecipe;
-import net.minecraft.world.item.crafting.SmithingTransformRecipe;
 import net.minecraft.world.item.crafting.SmokingRecipe;
-import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -68,25 +68,24 @@ import net.minecraft.world.level.material.MapColor;
 import net.minecraft.world.level.saveddata.maps.MapId;
 import net.minecraft.world.level.saveddata.maps.MapItemSavedData;
 import org.bukkit.Bukkit;
-import org.bukkit.DyeColor;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.craftbukkit.v1_21_R4.CraftRegistry;
-import org.bukkit.craftbukkit.v1_21_R4.CraftServer;
-import org.bukkit.craftbukkit.v1_21_R4.CraftWorld;
-import org.bukkit.craftbukkit.v1_21_R4.block.data.CraftBlockData;
-import org.bukkit.craftbukkit.v1_21_R4.entity.CraftPlayer;
-import org.bukkit.craftbukkit.v1_21_R4.inventory.*;
-import org.bukkit.craftbukkit.v1_21_R4.map.CraftMapView;
-import org.bukkit.craftbukkit.v1_21_R4.util.CraftMagicNumbers;
-import org.bukkit.craftbukkit.v1_21_R4.util.CraftNamespacedKey;
+import org.bukkit.craftbukkit.v1_21_R5.CraftRegistry;
+import org.bukkit.craftbukkit.v1_21_R5.CraftServer;
+import org.bukkit.craftbukkit.v1_21_R5.CraftWorld;
+import org.bukkit.craftbukkit.v1_21_R5.block.data.CraftBlockData;
+import org.bukkit.craftbukkit.v1_21_R5.entity.CraftPlayer;
+import org.bukkit.craftbukkit.v1_21_R5.inventory.*;
+import org.bukkit.craftbukkit.v1_21_R5.map.CraftMapView;
+import org.bukkit.craftbukkit.v1_21_R5.util.CraftMagicNumbers;
+import org.bukkit.craftbukkit.v1_21_R5.util.CraftNamespacedKey;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.*;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.SmithingTrimRecipe;
 import org.bukkit.inventory.TransmuteRecipe;
-import org.bukkit.inventory.*;
 import org.bukkit.map.MapView;
 
 import java.lang.reflect.Field;
@@ -119,6 +118,14 @@ public class ItemHelperImpl extends ItemHelper {
 
     public static RecipeManager getRecipeManager() {
         return ((CraftServer) Bukkit.getServer()).getServer().getRecipeManager();
+    }
+
+    public static net.minecraft.nbt.CompoundTag serializeNmsItem(net.minecraft.world.item.ItemStack nmsItem) {
+        return (net.minecraft.nbt.CompoundTag) net.minecraft.world.item.ItemStack.CODEC.encodeStart(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), nmsItem).getOrThrow();
+    }
+
+    public static net.minecraft.world.item.ItemStack parseNmsItem(net.minecraft.nbt.CompoundTag nmsTag) {
+        return net.minecraft.world.item.ItemStack.CODEC.parse(CraftRegistry.getMinecraftRegistry().createSerializationContext(NbtOps.INSTANCE), nmsTag).getOrThrow();
     }
 
     public Object recipeManagerFeatureFlagSetCache = null;
@@ -369,7 +376,7 @@ public class ItemHelperImpl extends ItemHelper {
     public CompoundTag getNbtData(ItemStack itemStack) {
         net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(itemStack);
         if (nmsItemStack != null && !nmsItemStack.isEmpty()) {
-            return CompoundTagImpl.fromNMSTag((net.minecraft.nbt.CompoundTag) nmsItemStack.save(CraftRegistry.getMinecraftRegistry()));
+            return CompoundTagImpl.fromNMSTag(serializeNmsItem(nmsItemStack));
         }
         return new CompoundTagImpl(new HashMap<>());
     }
@@ -377,8 +384,7 @@ public class ItemHelperImpl extends ItemHelper {
     // TODO: 1.20.6: same as getNbtData, ideally needs to only set custom NBT data and have specialized methods for other usages
     @Override
     public ItemStack setNbtData(ItemStack itemStack, CompoundTag compoundTag) {
-        net.minecraft.world.item.ItemStack nmsItemStack = net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), ((CompoundTagImpl) compoundTag).toNMSTag()).orElse(net.minecraft.world.item.ItemStack.EMPTY);
-        return CraftItemStack.asBukkitCopy(nmsItemStack);
+        return CraftItemStack.asBukkitCopy(parseNmsItem(((CompoundTagImpl) compoundTag).toNMSTag()));
     }
 
     @Override
@@ -409,9 +415,9 @@ public class ItemHelperImpl extends ItemHelper {
         nmsOldTag.putByte("Count", (byte) item.getAmount());
         nmsOldTag.put("tag", ((CompoundTagImpl) oldTag).toNMSTag());
         net.minecraft.nbt.CompoundTag nmsUpdatedTag = (net.minecraft.nbt.CompoundTag) MinecraftServer.getServer().fixerUpper.update(References.ITEM_STACK, new Dynamic<>(NbtOps.INSTANCE, nmsOldTag), DATA_VERSION_1_20_4, currentDataVersion).getValue();
-        net.minecraft.nbt.CompoundTag nmsCurrentTag = (net.minecraft.nbt.CompoundTag) CraftItemStack.asNMSCopy(item).save(CraftRegistry.getMinecraftRegistry());
+        net.minecraft.nbt.CompoundTag nmsCurrentTag = serializeNmsItem(CraftItemStack.asNMSCopy(item));
         net.minecraft.nbt.CompoundTag nmsMergedTag = nmsCurrentTag.merge(nmsUpdatedTag);
-        return CraftItemStack.asBukkitCopy(net.minecraft.world.item.ItemStack.parse(CraftRegistry.getMinecraftRegistry(), nmsMergedTag).orElseThrow());
+        return CraftItemStack.asBukkitCopy(parseNmsItem(nmsMergedTag));
     }
 
     @Override
@@ -769,23 +775,5 @@ public class ItemHelperImpl extends ItemHelper {
     @Override
     public int getFoodPoints(Material itemType) {
         return CraftMagicNumbers.getItem(itemType).components().get(DataComponents.FOOD).nutrition();
-    }
-
-    @Override
-    public DyeColor getShieldColor(ItemStack item) {
-        net.minecraft.world.item.DyeColor nmsColor = CraftItemStack.asNMSCopy(item).get(DataComponents.BASE_COLOR);
-        return nmsColor != null ? DyeColor.getByWoolData((byte) nmsColor.getId()) : null;
-    }
-
-    @Override
-    public ItemStack setShieldColor(ItemStack item, DyeColor color) {
-        net.minecraft.world.item.ItemStack nmsItemStack = CraftItemStack.asNMSCopy(item);
-        if (color != null) {
-            nmsItemStack.set(DataComponents.BASE_COLOR, net.minecraft.world.item.DyeColor.byId(color.getWoolData()));
-        }
-        else {
-            nmsItemStack.remove(DataComponents.BASE_COLOR);
-        }
-        return CraftItemStack.asBukkitCopy(nmsItemStack);
     }
 }
