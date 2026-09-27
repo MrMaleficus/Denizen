@@ -21,6 +21,9 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.md_5.bungee.api.ChatColor;
 import org.bukkit.Bukkit;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PaperModule {
 
     public static void init() {
@@ -68,7 +71,7 @@ public class PaperModule {
         ScriptEvent.registerScriptEvent(PlayerJumpsScriptEventPaperImpl.class);
         ScriptEvent.registerScriptEvent(PlayerLecternPageChangeScriptEvent.class);
         ScriptEvent.registerScriptEvent(PlayerLoomPatternSelectScriptEvent.class);
-        ScriptEvent.registerScriptEvent(PlayerNameEntityScriptEvent.class);
+        ScriptEvent.registerScriptEvent(PlayerNamesEntityScriptEvent.class);
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_20)) {
             ScriptEvent.registerScriptEvent(PlayerOpenSignScriptEvent.class);
         }
@@ -104,6 +107,9 @@ public class PaperModule {
             ScriptEvent.registerScriptEvent(TNTPrimesScriptEvent.class);
         }
         ScriptEvent.registerScriptEvent(UnknownCommandScriptEvent.class);
+        if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_21)) {
+            ScriptEvent.registerScriptEvent(VaultChangesStateScriptEvent.class);
+        }
         if (NMSHandler.getVersion().isAtLeast(NMSVersion.v1_19)) {
             ScriptEvent.registerScriptEvent(WardenChangesAngerLevelScriptEvent.class);
         }
@@ -170,6 +176,14 @@ public class PaperModule {
             return null;
         }
         return FormattedTextHelper.stringify(FormattedTextHelper.parseJson(componentToJson(component)));
+    }
+
+    public static List<String> stringifyComponentList(List<Component> components) {
+        List<String> result = new ArrayList<>(components.size());
+        for (Component component : components) {
+            result.add(stringifyComponent(component));
+        }
+        return result;
     }
 
     public static Component jsonToComponent(String json) {
